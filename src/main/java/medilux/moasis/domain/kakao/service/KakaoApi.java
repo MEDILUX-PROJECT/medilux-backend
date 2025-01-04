@@ -165,60 +165,6 @@ public class KakaoApi {
 
         return userInfo;
     }
-
-//    public HashMap<String, Object> getUserInfo(String accessToken) {
-//        HashMap<String, Object> userInfo = new HashMap<>();
-//        String reqUrl = "https://kapi.kakao.com/v2/user/me";
-//        try{
-//            URL url = new URL(reqUrl);
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Authorization", "Bearer " + accessToken);
-//            conn.setRequestProperty("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
-//
-//            int responseCode = conn.getResponseCode();
-//            log.info("[KakaoApi.getUserInfo] responseCode : {}",  responseCode);
-//
-//            BufferedReader br;
-//            if (responseCode >= 200 && responseCode <= 300) {
-//                br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//            } else {
-//                br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-//            }
-//
-//            String line = "";
-//            StringBuilder responseSb = new StringBuilder();
-//            while((line = br.readLine()) != null){
-//                responseSb.append(line);
-//            }
-//            String result = responseSb.toString();
-//            log.info("responseBody = {}", result);
-//
-//            JsonParser parser = new JsonParser();
-//            JsonElement element = parser.parse(result);
-//
-////            JsonObject properties = element.getAsJsonObject().get("properties").getAsJsonObject();
-//            JsonObject kakaoAccount = element.getAsJsonObject().get("kakao_account").getAsJsonObject();
-//            JsonObject profile = kakaoAccount.getAsJsonObject().get("profile").getAsJsonObject();
-//
-//
-////            String email = kakaoAccount.getAsJsonObject().get("email").getAsString();
-////            String nickname = profile.getAsJsonObject().get("nickname").getAsString();
-////            String picture = profile.getAsJsonObject().get("thumbnail_image_url").getAsString();
-//
-//            String email = kakaoAccount.has("email") ? kakaoAccount.get("email").getAsString() : "No email provided";
-//            String nickname = profile.has("nickname") ? profile.get("nickname").getAsString() : "No nickname provided";
-//
-//            userInfo.put("nickname", nickname);
-//            userInfo.put("email", email);
-//
-//            br.close();
-//
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//        return userInfo;
-//    }
 }
 
 
