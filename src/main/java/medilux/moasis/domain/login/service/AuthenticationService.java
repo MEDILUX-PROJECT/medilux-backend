@@ -16,7 +16,7 @@ public interface AuthenticationService {
 
     boolean kakaoIdExists(String kakaoEmail);
 
-    Optional<User> kakaoSignup(String email, String nickname, String profileImgUrl);
+    Optional<User> kakaoSignup(String email, String nickname);
 
     JwtAuthenticationResponse signin(SignInRequest signinRequest);
 

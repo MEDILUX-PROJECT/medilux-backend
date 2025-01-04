@@ -66,7 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Optional<User> kakaoSignup(String email, String nickname, String profileImgUrl) { // 카카오 회원가입
+    public Optional<User> kakaoSignup(String email, String nickname) { // 카카오 회원가입
 
         if (userRepository.existsByEmail(email)) {
             return userRepository.findByEmail(email);
