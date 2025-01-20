@@ -84,6 +84,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     }
 
+    @Override
+    public Optional<User> googleSignup(String email, String nickname) {
+        // 이메일로 이미 사용자가 존재하는지 확인
+        if (userRepository.existsByEmail(email)) {
+            log.info("기존 회원");
+            return userRepository.findByEmail(email); // 이미 존재하면 해당 사용자 반환
+        }
+
+        // 새로운 사용자 생성
+        User user = User.builder()
+                .email(email)
+                .nickname(nickname)
+                .residence(null) // Google 로그인 시 기본 값 설정
+                .gender(true) // 기본 값 설정 (필요에 따라 수정)
+                .phone(null) // 기본 값 설정
+                .build();
+
+        // 저장 후 반환
+        return Optional.of(userRepository.save(user));
+    }
+
 
     public JwtAuthenticationResponse signin(SignInRequest signinRequest) {
 
@@ -113,6 +134,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         jwtAuthenticationResponse.setRefreshToken(refreshToken);
         return jwtAuthenticationResponse;
 
+    }
+
+
+    @Override
+    public JwtAuthenticationResponse googleSignin(String email) {
+        // 이메일로 사용자 찾기
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+
+        // JWT 액세스 토큰 및 리프레시 토큰 생성
+        var jwt = jwtService.generateToken(user);
+        var refreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+
+        // JWT 응답 생성
+        JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
+        jwtAuthenticationResponse.setAccessToken(jwt);
+        jwtAuthenticationResponse.setRefreshToken(refreshToken);
+
+        return jwtAuthenticationResponse;
     }
 
 

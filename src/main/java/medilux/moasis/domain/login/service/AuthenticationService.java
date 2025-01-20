@@ -18,10 +18,13 @@ public interface AuthenticationService {
 
     Optional<User> kakaoSignup(String email, String nickname);
 
+    Optional<User> googleSignup(String email, String nickname);
+
     JwtAuthenticationResponse signin(SignInRequest signinRequest);
 
     JwtAuthenticationResponse kakaoSignin(String email);
 
+    JwtAuthenticationResponse googleSignin(String email);
 
     JwtAuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 

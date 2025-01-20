@@ -1,6 +1,7 @@
 package medilux.moasis.config;
 
 import lombok.RequiredArgsConstructor;
+import medilux.moasis.domain.login.service.PrincipalOauth2UserService;
 import medilux.moasis.domain.login.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,7 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final UserService userService;
+    private final PrincipalOauth2UserService principalOauth2UserService;
 
 
     @Bean
@@ -45,7 +47,11 @@ public class SecurityConfiguration {
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+                                .userService(principalOauth2UserService)) // OAuth2 사용자 서비스 추가
+                        .defaultSuccessUrl("/", true)); // 로그인 성공 후 리디렉션
 
         return http.build();
     }
