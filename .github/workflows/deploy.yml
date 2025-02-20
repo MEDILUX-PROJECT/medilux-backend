@@ -1,73 +1,72 @@
-name: new Build and Deploy for medilux-server to medilux-server EC2
+name: Build and Deploy medilux-server Docker Image
 
 #on:
-#   push:
-#     branches: [ feat/deploy-workflow ]
+#  pull_request:
+#    branches:
+#      - dev
+#    types: [closed]
 on:
-  pull_request:
+  push:
     branches:
-      - dev
-    types: [closed]
+      - feat/V1-docker
 
 env:
-  # 버킷에 저장할 폴더 이름
-  PROJECT_NAME: medilux-server
-  # S3 버킷 이름
-  BUCKET_NAME: medilux-s3-bucket
-  # CodeDeploy의 애플리케이션 이름
+  # ECR 관련 변수
+  ECR_REGISTRY: 203918878480.dkr.ecr.ap-northeast-2.amazonaws.com
+  ECR_REPOSITORY: medilux_project/moasis
+  IMAGE_TAG: ${{ github.sha }}
+
+  # CodeDeploy 관련 변수 (필요시 그대로 사용)
   CODE_DEPLOY_APP_NAME: medilux-app
-  # CodeDeploy의 배포그룹 이름
   DEPLOYMENT_GROUP_NAME: medilux-app-deployment-group
-  
 
 jobs:
   build:
-    # 실행 환경 설정
     runs-on: ubuntu-latest
 
-    # 차례대로 실행
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - run: touch ./src/main/resources/application.properties
-    - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.properties
-    - run: cat ./src/main/resources/application.properties
-    
-    - name: Set up JDK 17
-      uses: actions/setup-java@v1
-      with:
-        java-version: 17
+      # 필요한 설정 파일 생성 및 빌드 과정 (기존과 동일)
+      - run: touch ./src/main/resources/application.properties
+      - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.properties
+      - run: cat ./src/main/resources/application.properties
 
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: 17
+#
+#      - name: Grant execute permission for gradlew
+#        run: chmod +x gradlew
+#
+#      - name: Build with Gradle
+#        run: ./gradlew clean build -x test
 
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    # Gradle build (Test 제외)
-    - name: Build with Gradle
-      run: ./gradlew clean build -x test
-      
-    # 압축 파일 만들기
-    - name: Make Zip File
-      run: zip -qq -r ./$GITHUB_SHA.zip .
-      shell: bash
-      
-    # AWS 인증
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-2
-      
-    # S3 버킷으로 파일을 업로드
-    - name: Upload to S3
-      run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://$BUCKET_NAME/$PROJECT_NAME/$GITHUB_SHA.zip
+      # 도커 이미지 빌드를 위한 Dockerfile이 프로젝트 루트에 위치해야 함
+      - name: Build Docker Image
+        run: docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
-    # S3 버킷에 업로드 된 파일을 대상으로 CodeDeploy에서 배포 요청
-    - name: Code Deploy
-      run: aws deploy create-deployment
-        --application-name $CODE_DEPLOY_APP_NAME
-        --deployment-config-name CodeDeployDefault.OneAtATime
-        --deployment-group-name $DEPLOYMENT_GROUP_NAME
-        --s3-location bucket=$BUCKET_NAME,bundleType=zip,key=$PROJECT_NAME/$GITHUB_SHA.zip
+      # AWS ECR 로그인 (aws-actions/amazon-ecr-login 액션 사용)
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # (옵션) CodeDeploy를 사용해 배포를 트리거하는 경우
+      - name: Trigger CodeDeploy Deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name $CODE_DEPLOY_APP_NAME \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --deployment-group-name $DEPLOYMENT_GROUP_NAME \
+            --description "Deploying Docker image $IMAGE_TAG" \
+            --revision "revisionType=AppSpecContent,appSpecContent={\"version\":\"0.0\",\"Resources\":[{\"myImage\":{\"type\":\"AWS::ECR::Image\",\"properties\":{\"imageUri\":\"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG\"}}}]}" \
+            --region ap-northeast-2

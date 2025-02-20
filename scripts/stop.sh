@@ -1,19 +1,16 @@
-# stop.sh
+#!/bin/bash
 
-PROJECT_ROOT="/home/ec2-user/deploy"
-JAR_FILE="$PROJECT_ROOT/medilux-0.0.1-SNAPSHOT.jar"
+set -e
 
-DEPLOY_LOG="$PROJECT_ROOT/deploy.log"
+CONTAINER_NAME="medilux-server"
 
-TIME_NOW=$(date +%c)
+# 현재 실행 중인 컨테이너가 있는지 확인
+RUNNING_CONTAINER=$(docker ps -q -f name=$CONTAINER_NAME)
 
-# 현재 구동 중인 애플리케이션 pid 확인
-CURRENT_PID=$(pgrep -f $JAR_FILE)
-
-# 프로세스가 켜져 있으면 종료
-if [ -z $CURRENT_PID ]; then
-  echo "$TIME_NOW > 현재 실행중인 애플리케이션이 없습니다" >> $DEPLOY_LOG
+if [ -n "$RUNNING_CONTAINER" ]; then
+  echo "Stopping and removing existing container: $CONTAINER_NAME"
+  docker stop $CONTAINER_NAME
+  docker rm $CONTAINER_NAME
 else
-  echo "$TIME_NOW > 실행중인 $CURRENT_PID 애플리케이션 종료 " >> $DEPLOY_LOG
-  kill -15 $CURRENT_PID
+  echo "No running container named $CONTAINER_NAME."
 fi
