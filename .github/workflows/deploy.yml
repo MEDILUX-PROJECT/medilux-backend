@@ -62,7 +62,7 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@your-ec2-ip << 'EOF'
+          ssh -i ~/.ssh/medilux-server-keypair.pem ubuntu@3.35.57.138
             aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $ECR_REGISTRY
             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
             docker stop my-container || true
