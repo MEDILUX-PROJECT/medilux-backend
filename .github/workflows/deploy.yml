@@ -61,6 +61,25 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # (옵션) CodeDeploy를 사용해 배포를 트리거하는 경우
+      - name: Create AppSpec JSON File
+        run: |
+          echo '{
+            "revisionType": "AppSpecContent",
+            "appSpecContent": {
+              "version": "0.0",
+              "Resources": [
+                {
+                  "myImage": {
+                    "type": "AWS::ECR::Image",
+                    "properties": {
+                      "imageUri": "'"$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"'"
+                    }
+                  }
+                }
+              ]
+            }
+          }' > appspec.json
+
       - name: Trigger CodeDeploy Deployment
         run: |
           aws deploy create-deployment \
@@ -68,12 +87,5 @@ jobs:
             --deployment-config-name CodeDeployDefault.OneAtATime \
             --deployment-group-name $DEPLOYMENT_GROUP_NAME \
             --description "Deploying Docker image $IMAGE_TAG" \
-            --revision 'revisionType=AppSpecContent,appSpecContent={\"version\":\"0.0\",\"Resources\":[{\"myImage\":{\"type\":\"AWS::ECR::Image\",\"properties\":{\"imageUri\":\"'$ECR_REGISTRY'/'$ECR_REPOSITORY':'$IMAGE_TAG'\"}}}]}' \
+            --revision file://appspec.json \
             --region ap-northeast-2
-        env:
-          ECR_REGISTRY: 203918878480.dkr.ecr.ap-northeast-2.amazonaws.com
-          ECR_REPOSITORY: medilux_project/moasis
-          IMAGE_TAG: ${{ github.sha }}
-          CODE_DEPLOY_APP_NAME: medilux-app
-          DEPLOYMENT_GROUP_NAME: medilux-app-deployment-group
-
